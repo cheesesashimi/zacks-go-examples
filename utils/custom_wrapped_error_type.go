@@ -18,6 +18,11 @@ func NewCustomWrappedError(msg string, err error) error {
 	}
 }
 
+// Returns the contents of our message field since the field itself is private.
+func (c *CustomWrappedError) Message() string {
+	return c.msg
+}
+
 // We must implement this method to satisfy the basic error interface.
 // Note: For brevity, we only return the field that was set on our error type.
 // In practice, you can do all kinds of additional text processing here.

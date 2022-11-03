@@ -25,7 +25,6 @@ func readAJSONFile(path string) error {
 		return fmt.Errorf("readAJSONFile file error: %w", err)
 	}
 
-	// Don't worry about this for right now...
 	dst := map[string]interface{}{}
 	if err := json.Unmarshal(fileBytes, &dst); err != nil {
 		// Add some additional context to the error returned by json.Unmarshal
