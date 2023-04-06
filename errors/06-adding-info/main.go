@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/cheesesashimi/golang-errors/utils"
+	"github.com/cheesesashimi/zacks-go-examples/errors/utils"
 )
 
 type resolvableError struct {

@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 
-	"github.com/cheesesashimi/golang-errors/utils"
+	"github.com/cheesesashimi/zacks-go-examples/errors/utils"
 )
 
 func main() {

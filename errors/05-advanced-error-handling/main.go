@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cheesesashimi/golang-errors/utils"
+	"github.com/cheesesashimi/zacks-go-examples/errors/utils"
 )
 
 const errText string = "i'm an error"

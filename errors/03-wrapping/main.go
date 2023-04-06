@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cheesesashimi/golang-errors/utils"
+	"github.com/cheesesashimi/zacks-go-examples/errors/utils"
 )
 
 func basicWrappingAndUnwrapping() {
