@@ -1,3 +1,3 @@
-# golang-errors
+# zacks-go-examples
 
-This repo is a home for code samples used in a training session.
+This repo is a home for code samples used in training sessions that I've led.
