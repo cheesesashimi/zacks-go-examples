@@ -40,7 +40,7 @@ func spawning() {
 
 	// Uncommenting this line will cause the main Goroutine to sleep, providing
 	// enough time for the above Goroutines to print their output:
-	// time.Sleep(time.Millisecond)
+	// time.Sleep(time.Millisecond * 600)
 }
 
 // Another technique that one can do to wait on a Goroutine is to use the
