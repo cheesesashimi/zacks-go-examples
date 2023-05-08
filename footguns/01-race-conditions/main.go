@@ -70,6 +70,7 @@ func mutexes() int {
 }
 
 func runRaceConditionsAndMutexes() {
+	// Runs our purposely broken implementation until we have 10 unique outcomes.
 	resultMap := map[int]struct{}{}
 	runs := 0
 	for {
@@ -92,8 +93,10 @@ func runRaceConditionsAndMutexes() {
 
 	fmt.Printf("No mutexes: %v (took %d runs)\n", results, runs)
 
+	// Next, we run our mutex'ed implementation as many times as we ran our
+	// non-mutex'ed implementation.
 	results = []int{}
-	for i := 0; i <= 10; i++ {
+	for i := 0; i <= runs; i++ {
 		results = append(results, mutexes())
 	}
 
