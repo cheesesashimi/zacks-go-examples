@@ -183,30 +183,49 @@ func nonBlockingChannelReads() {
 	chan2 := make(chan int)
 	chan3 := make(chan int)
 
+	// This function accepts a channel as an argument for where to send values
+	// to. It also accepts an ID, which is solely for identification reasons.
+	sendRandomNumbersToChannel := func(destChan chan int, id int) {
+		for _, num := range utils.GenerateRandomNumbers(0, 100, 100) {
+			// time.Sleep(time.Millisecond * time.Duration(utils.GenerateRandomNumber(0, 100)))
+			destChan <- num
+		}
+		close(destChan) // Comment this line out and see what happens :).
+		fmt.Printf("Goroutine %d finished, channel %d closed\n", id, id)
+	}
+
 	// Start Goroutines to sum numbers and send the results to the provided
 	// channel upon completion.
-	go func() {
-		chan1 <- utils.Sum(utils.GenerateRandomNumbers(0, 100, 100))
-		fmt.Println("Goroutine 1 finished")
-	}()
+	go sendRandomNumbersToChannel(chan1, 1)
+	go sendRandomNumbersToChannel(chan2, 2)
+	go sendRandomNumbersToChannel(chan3, 3)
 
 	go func() {
-		chan2 <- utils.Sum(utils.GenerateRandomNumbers(0, 100, 100))
-		fmt.Println("Goroutine 2 finished")
-	}()
-
-	go func() {
-		chan3 <- utils.Sum(utils.GenerateRandomNumbers(0, 100, 100))
-		fmt.Println("Goroutine 3 finished")
-	}()
-
-	go func() {
-		// Because our channels will only return a single value, we must keep track
-		// of which channel has been read so we know whether we can terminate our
-		// loop. If we don't do this, we will wait indefinitely.
+		// We must keep track of which channel has been read so we know whether we
+		// can terminate our loop. If we don't do this, we will wait indefinitely.
+		// Alternatively, if we don't close our channels, we'll deadlock. Try
+		// commenting out the "close(destChan)" line in
+		// sendRandomNumbersToChannel() and see what happens :).
 		chan1Finished := false
 		chan2Finished := false
 		chan3Finished := false
+
+		// Because we want to do the same thing for each channel, we call this
+		// function with our channel ID, the value received, and whether it was OK.
+		// We infer from the the ok value whether the channel has closed or not.
+		handleChannelEvent := func(channelID, value int, ok bool) bool {
+			finished := !ok
+			fmt.Printf("chan %d value: %d, ok? %v, finished? %v\n", channelID, value, ok, finished)
+			cumulativeChan <- value
+			return finished
+		}
+
+		printChannelState := func() {
+			fmt.Printf("chan 1 finished? %v, chan 2 finished? %v, chan 3 finished? %v\n", chan1Finished, chan2Finished, chan3Finished)
+		}
+
+		fmt.Printf("start: ")
+		printChannelState()
 
 		// We need a loop so that we can keep reading from all of our channels.
 		for {
@@ -214,25 +233,44 @@ func nonBlockingChannelReads() {
 			// is very similar to the switch {} syntax with a few exceptions.
 			select {
 			// Using this syntax, we can figure out if we should expect more values
-			// to be reported over the channel.
-			case chan1Value, isFinished := <-chan1:
-				fmt.Println("chan 1 value:", chan1Value)
-				chan1Finished = isFinished
-				cumulativeChan <- chan1Value
-			case chan2Value, isFinished := <-chan2:
-				fmt.Println("chan 2 value:", chan2Value)
-				chan2Finished = isFinished
-				cumulativeChan <- chan2Value
-			case chan3Value, isFinished := <-chan3:
-				fmt.Println("chan 3 value:", chan3Value)
-				chan3Finished = isFinished
-				cumulativeChan <- chan3Value
+			// to be reported over the channel. The ok values indicate whether the
+			// channel is closed, which we use to infer whether we should break out
+			// of our loop or not. See: https://go.dev/ref/spec#Receive_operator for
+			// details.
+			case val, ok := <-chan1:
+				chan1Finished = handleChannelEvent(1, val, ok)
+			case val, ok := <-chan2:
+				chan2Finished = handleChannelEvent(2, val, ok)
+			case val, ok := <-chan3:
+				chan3Finished = handleChannelEvent(3, val, ok)
 			default:
-				if chan1Finished && chan2Finished && chan3Finished {
-					close(cumulativeChan)
-					fmt.Println("cumulative Goroutine finished")
-					return
-				}
+				fmt.Printf("default case: ")
+				printChannelState()
+			}
+
+			// After we've processed our channel value, we need to determine whether
+			// we've reached the required exit condition for our loop. If we've
+			// reached it, we need to close our cumulative channel and return from
+			// here. We need to guarantee that the exit condition is evaluated on
+			// each loop iteration. Because of that requirement, we cannot use a
+			// default case on the above select statement. Here's why:
+			//
+			// While we cannot read from a closed channel and will get a runtime
+			// panic if we try to do so, the use of the receive operator means that
+			// each statement in the select will still be evaluated even if the
+			// channel is closed. The assignment will result in a nil or zero value
+			// for the given type as well as a false boolean value. However, for the
+			// purposes of the select case, that case will still evaluate to "true",
+			// executing the code for that specific case and not falling through to
+			// the default case.
+			//
+			// To see this in action, you can do the following:
+			// $ go build -o channels && ./channels | grep "default case"
+			if chan1Finished && chan2Finished && chan3Finished {
+				close(cumulativeChan)
+				fmt.Printf("cumulative Goroutine finished: ")
+				printChannelState()
+				return
 			}
 		}
 	}()
